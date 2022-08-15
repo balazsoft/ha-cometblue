@@ -2,8 +2,8 @@
 Home Assistant Support for Eurotronic CometBlue thermostats.
 They are identical to the Sygonix, Xavax Bluetooth thermostats
 
-This version is based on the bluepy library and works on hassio. 
-Currently only current and target temperature in manual mode is supported, nothing else. 
+This version is based on the bluepy library and works on hassio.
+Currently only current and target temperature in manual mode is supported, nothing else.
 
 Add your cometblue thermostats to configuration.yaml:
 
@@ -39,7 +39,8 @@ from homeassistant.const import (
     ATTR_TEMPERATURE,
     ATTR_BATTERY_LEVEL,
     ATTR_LOCKED,
-    PRECISION_HALVES)
+    PRECISION_HALVES,
+)
 
 import homeassistant.helpers.config_validation as cv
 
@@ -48,23 +49,26 @@ _LOGGER.setLevel(10)
 
 MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=300)
 
-ATTR_BATTERY_LOW = 'battery_low'
-ATTR_OFFSET = 'offset'
-ATTR_STATUS = 'status'
-ATTR_WINDOW_OPEN = 'window_open'
+ATTR_BATTERY_LOW = "battery_low"
+ATTR_OFFSET = "offset"
+ATTR_STATUS = "status"
+ATTR_WINDOW_OPEN = "window_open"
 
 CONF_FAKE_MANUAL = "fake_manual_mode"
 
-DEVICE_SCHEMA = vol.Schema({
-    vol.Required(CONF_MAC): cv.string,
-    vol.Optional(CONF_PIN, default=0): cv.positive_int,
-    vol.Optional(CONF_FAKE_MANUAL, default=False): cv.boolean,
-})
+DEVICE_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_MAC): cv.string,
+        vol.Optional(CONF_PIN, default=0): cv.positive_int,
+        vol.Optional(CONF_FAKE_MANUAL, default=False): cv.boolean,
+    }
+)
 
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
-    vol.Required(CONF_DEVICES):
-        vol.Schema({cv.string: DEVICE_SCHEMA}),
-})
+PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
+    {
+        vol.Required(CONF_DEVICES): vol.Schema({cv.string: DEVICE_SCHEMA}),
+    }
+)
 
 SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE
 
@@ -85,7 +89,8 @@ class CometBlueThermostat(ClimateEntity):
     """Representation of a CometBlue thermostat."""
 
     def __init__(self, _mac, _name, _pin=None):
-        from cometblue_lite import CometBlue
+        from custom_components.cometblue.cometblue import CometBlue
+
         """Initialize the thermostat."""
         self._mac = _mac
         self._name = _name
@@ -98,7 +103,7 @@ class CometBlueThermostat(ClimateEntity):
     def unique_id(self):
         """Return unique ID for this device."""
         return self._mac
-    
+
     @property
     def available(self) -> bool:
         """Return if thermostat is available."""
@@ -159,8 +164,8 @@ class CometBlueThermostat(ClimateEntity):
             _LOGGER.debug("Temperature to set: {}".format(temperature))
             self._thermostat.target_temperature = temperature
             if self.fake_manual_mode:
-                 self._thermostat.target_temperature_high = temperature
-                 self._thermostat.target_temperature_low = temperature
+                self._thermostat.target_temperature_high = temperature
+                self._thermostat.target_temperature_low = temperature
 
     @property
     def min_temp(self):
@@ -226,12 +231,13 @@ class CometBlueThermostat(ClimateEntity):
     def update(self):
         """Update the data from the thermostat."""
         now = datetime.now()
-        if ( 
-            self._thermostat.should_update() or
-            (self._lastupdate and self._lastupdate + MIN_TIME_BETWEEN_UPDATES < now)
+        if self._thermostat.should_update() or (
+            self._lastupdate and self._lastupdate + MIN_TIME_BETWEEN_UPDATES < now
         ):
             try:
                 self._thermostat.update()
                 self._lastupdate = datetime.now()
             except BTLEException as ex:
-                _LOGGER.warning("Updating the state for {} failed: {}".format(self._mac, ex))
+                _LOGGER.warning(
+                    "Updating the state for {} failed: {}".format(self._mac, ex)
+                )
